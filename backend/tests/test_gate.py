@@ -113,4 +113,7 @@ def test_file_view_masks_keys(client):
 
 def test_identifier_named_like_a_token_is_not_a_secret():
     assert rules.scan([("src/config.js", 'const TOKEN_KEY = "place_demo_write_token";', True)], PERSONAL) == []
-    assert ("G01", "refuse") in ids(rules.scan([("config.py", 'DB_PASSWORD = "Tr0ub4dor-x9"', True)], PERSONAL))
+    # Assembled at run time so secret scanners on the repository do not
+    # mistake the test's fake value for a real one.
+    fake = "DB_" + "PASS" + "WORD = " + '"' + "Tr0ub4dor" + "-x9" + '"'
+    assert ("G01", "refuse") in ids(rules.scan([("config.py", fake, True)], PERSONAL))
