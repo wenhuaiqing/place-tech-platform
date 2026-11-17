@@ -1,5 +1,5 @@
 // Animated plasma orb: wraps the open-source `react-ai-orb` package,
-// re-skinned to Plexxcon's teal (#4AB7C3, hue 186) with violet flecks (hue
+// re-skinned to Place's teal (#128190, hue 187) with violet flecks (hue
 // 250, the colour this demo reserves for anything the AI produced), plus a
 // small orbiting-rings CSS animation.
 import { Orb } from "react-ai-orb";
