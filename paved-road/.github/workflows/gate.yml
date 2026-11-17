@@ -1,0 +1,50 @@
+# Every pull request: the production gate, dependency review and CodeQL.
+# The gate's refusal fails the job, and the ruleset makes that job required,
+# so a refused change cannot merge - not a warning someone scrolls past.
+name: gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # the history too: a removed key still needs rotating
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Production gate
+        # The platform's checks, pinned to a release of the platform repository.
+        run: |
+          pip install "place-gate @ git+https://github.com/place-org/platform@v1#subdirectory=gate"
+          personal=$(python -c "import yaml;d=yaml.safe_load(open('tool.yaml'));print('--personal' if set(d['data_classes'])&{'personal','financial','sensitive'} else '')")
+          place-gate . $personal
+      - name: Register entry is complete
+        run: python -c "import yaml;d=yaml.safe_load(open('tool.yaml'));missing=[k for k in ('name','owner','tier','data_classes','ai_route') if not d.get(k)];assert not missing, missing"
+
+  dependencies:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript, python
+      - uses: github/codeql-action/analyze@v3

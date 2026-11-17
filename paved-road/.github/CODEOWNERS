@@ -1,0 +1,5 @@
+# The tool's owner reviews every change. Tier 1 tools (identity documents,
+# financial data, or 60+ users) add the platform lead.
+*            @place-org/owner-example-tool
+infra/       @place-org/platform
+tool.yaml    @place-org/platform

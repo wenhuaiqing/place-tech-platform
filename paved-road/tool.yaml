@@ -1,0 +1,10 @@
+# The register entry for this tool. The platform's inventory reads it from
+# every repository in the organisation; CI checks it is complete.
+name: Example tool
+owner: someone@place.example        # a current staff member; changes go through CAB
+process: Vendor reporting            # the business process it supports
+tier: 2                              # 1 identity, financial or 60+ users; 2 personal data; 3 public or internal
+data_classes: [personal]             # public, internal, personal, financial, sensitive
+ai_route: gateway                    # none, gateway, copilot-studio - never a personal key
+runbook: docs/runbook.md
+support_hours: business              # business or extended
