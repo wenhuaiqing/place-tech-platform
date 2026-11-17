@@ -48,7 +48,7 @@ resource "azurerm_container_app" "app" {
 
   template {
     min_replicas = var.min_replicas
-    # One replica: the demo's state - changes, fixes, the audit log, rate
+    # One replica: the demo's state - the assistant's run log and rate
     # limits - lives in that replica's working copy of the database.
     max_replicas = 1
 

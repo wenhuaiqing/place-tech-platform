@@ -1,28 +1,23 @@
 // Auto-discovers pages under src/pages/<Section>/<Page>.jsx. The folder name
 // becomes the URL slug; MODULE_META fixes the label, icon, group and order.
 
-import {
-  Activity, Bot, ClipboardCheck, Compass, FileText, GitPullRequest, Milestone, Network, Route, ShieldCheck, Sparkles, TableProperties, Wallet,
-} from "lucide-react";
+import { Building2, Compass, FileSearch, Home, KeyRound, Megaphone, MessageSquareText, Milestone, ShieldCheck, Wrench } from "lucide-react";
 
 const PAGE_MODULES = import.meta.glob("./pages/*/*.jsx", { eager: true });
 
 export const MODULE_META = {
-  Overview:   { label: "Overview",           icon: Compass,         group: "Start here", order: 0 },
-  Register:   { label: "Tool register",      icon: TableProperties, group: "Days 1 to 30: know what exists", order: 1, slug: "register" },
-  Discovery:  { label: "How it was found",   icon: Network,         group: "Days 1 to 30: know what exists", order: 2, slug: "discovery" },
-  AiRegister: { label: "AI register",        icon: Sparkles,        group: "Days 1 to 30: know what exists", order: 3, slug: "ai-register" },
-  Gate:       { label: "Production gate",    icon: ShieldCheck,     group: "Days 31 to 60: bring it in", order: 4, slug: "gate" },
-  Changes:    { label: "Changes",            icon: GitPullRequest,  group: "Days 31 to 60: bring it in", order: 5, slug: "changes" },
-  PavedRoad:  { label: "Paved road",         icon: Route,           group: "Days 31 to 60: bring it in", order: 6, slug: "paved-road" },
-  Monitoring: { label: "Monitoring",         icon: Activity,        group: "Days 61 to 90: run it", order: 7, slug: "monitoring" },
-  Triage:     { label: "Incident triage",    icon: Bot,             group: "Days 61 to 90: run it", order: 8, slug: "triage" },
-  Cost:       { label: "Cloud cost",         icon: Wallet,          group: "Days 61 to 90: run it", order: 9, slug: "cost" },
-  CabReport:  { label: "CAB report",         icon: FileText,        group: "Days 61 to 90: run it", order: 10, slug: "cab-report" },
-  FirstDays:  { label: "First 90 days",      icon: Milestone,       group: "The role", order: 11, slug: "first-90-days" },
+  Overview:   { label: "Overview",          icon: Compass,           group: "The business", order: 0 },
+  Sales:      { label: "Sales",             icon: Home,              group: "The business", order: 1, slug: "sales" },
+  Rentals:    { label: "Rentals",           icon: KeyRound,          group: "The business", order: 2, slug: "rentals" },
+  Offices:    { label: "Offices",           icon: Building2,         group: "The business", order: 3, slug: "offices" },
+  Marketing:  { label: "Marketing",         icon: Megaphone,         group: "The business", order: 4, slug: "marketing" },
+  Checks:     { label: "Data checks",       icon: ShieldCheck,       group: "Trusting the numbers", order: 5, slug: "data-checks" },
+  Ask:        { label: "Ask the data",      icon: MessageSquareText, group: "Trusting the numbers", order: 6, slug: "ask" },
+  Built:      { label: "How it is run",     icon: Wrench,            group: "The role", order: 7, slug: "how-it-is-run" },
+  FirstDays:  { label: "First 90 days",     icon: Milestone,         group: "The role", order: 8, slug: "first-90-days" },
 };
 
-export const AUDIT_ICON = ClipboardCheck;
+export const SEARCH_ICON = FileSearch;
 
 export function getRoutes() {
   const seen = new Map();
@@ -36,4 +31,6 @@ export function getRoutes() {
   return [...seen.values()].sort((a, b) => a.order - b.order);
 }
 
-export const GROUP_NOTES = {};
+export const GROUP_NOTES = {
+  "Trusting the numbers": "Every figure is checked before it is shown.",
+};

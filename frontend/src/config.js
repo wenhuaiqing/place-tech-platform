@@ -4,17 +4,10 @@ export const DISCLAIMER = "Built for a job application. Not affiliated with or e
 // Same origin in dev (Vite proxy) and in production (nginx sidecar).
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
-// Open demo: any visitor can propose, decide and implement changes, acting as
-// one of the demo people. The rules still refuse, and changes go back to the
-// build whenever the site idles. VITE_PUBLIC_WRITES=false (with
-// PUBLIC_WRITES=false on the server) makes every write need the token.
-export const PUBLIC_WRITES = import.meta.env.VITE_PUBLIC_WRITES !== "false";
-
-// Operator write token: open the site once with ?write_token=<value>; it is
-// kept in sessionStorage, scrubbed from the URL, and sent as X-Write-Token.
-// It allows resetting the demo and exempts the session from rate limits.
+// The reports are read-only. The operator's token (open the site once with
+// ?write_token=<value>; kept in sessionStorage, scrubbed from the URL) only
+// lifts the assistant's rate limit for a live walkthrough.
 const TOKEN_KEY = "place_demo_write_token";
-export const ACTOR_KEY = "place_demo_actor";
 
 function captureTokenFromUrl() {
   try {
@@ -38,13 +31,12 @@ export function authHeaders() {
   return token ? { "X-Write-Token": token } : {};
 }
 
-// Who the visitor is acting as. Recorded on every write and used for
-// separation of duties; never trusted as identity. A production build takes
-// it from Entra ID.
+export const PUBLIC_WRITES = false;
+
 export function actorName() {
-  try { return sessionStorage.getItem(ACTOR_KEY) || "Platform lead"; } catch { return "Platform lead"; }
+  return "Visitor";
 }
 
-export function setActorName(name) {
-  try { sessionStorage.setItem(ACTOR_KEY, name); } catch { /* storage blocked */ }
+export function requestHeaders() {
+  return { ...authHeaders() };
 }

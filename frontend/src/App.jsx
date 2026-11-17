@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import { NavLink, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
-import { DISCLAIMER, PUBLIC_WRITES, actorName, setActorName, writeToken } from "./config.js";
+import UnifiedOrb from "./components/common/UnifiedOrb.jsx";
+import { DISCLAIMER, writeToken } from "./config.js";
 import { useTheme } from "./context/ThemeContext.jsx";
 import { useApi } from "./lib/api.js";
 import { useIsMobile } from "./lib/useMediaQuery.js";
@@ -57,7 +58,7 @@ function Brand({ compact }) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <img src="/place-mark-negative.png" alt="Place" style={{ width: 28, height: 28, display: "block" }} />
-        <span style={{ fontSize: 12, color: "#FFFFFF", fontWeight: 650 }}>Technology platform</span>
+        <span style={{ fontSize: 12, color: "#FFFFFF", fontWeight: 650 }}>Business reporting</span>
       </div>
     );
   }
@@ -65,7 +66,7 @@ function Brand({ compact }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
       <img src="/place-logo-negative.png" alt="Place" style={{ width: 132, height: "auto", display: "block" }} />
       <span style={{ fontSize: 10.5, color: t.sidebarMuted, fontWeight: 600, letterSpacing: "0.02em" }}>
-        Technology platform - demo
+        Business reporting - demo
       </span>
     </div>
   );
@@ -95,50 +96,12 @@ function Pill({ tone, children }) {
   );
 }
 
-// Who the visitor is acting as. It exists so separation of duties can be
-// shown - propose a change as one person, try to approve it as the same one.
-function ActingAs({ people }) {
-  const { t } = useTheme();
-  const [name, setName] = useState(actorName());
-  const all = [...(people?.platform || []), ...(people?.cab || []), ...(people?.builders || [])];
-  return (
-    <label style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, color: t.headerMuted }}>
-      Acting as
-      <select aria-label="Acting as" value={name} onChange={(e) => { setActorName(e.target.value); setName(e.target.value); window.location.reload(); }} style={{
-        background: t.surface, color: t.text, border: `1px solid ${t.border}`, borderRadius: 8, padding: "4px 6px",
-        fontSize: 12, fontFamily: "inherit",
-      }}>
-        {all.map((p) => <option key={p} value={p}>{p}</option>)}
-      </select>
-    </label>
-  );
-}
-
-// The phone menu's copy of the picker: the header has no room for it.
-function MenuActing() {
-  const { t } = useTheme();
-  const { data: meta } = useApi("/api/meta");
-  if (!meta || !(PUBLIC_WRITES || writeToken())) return null;
-  const all = [...(meta.people?.platform || []), ...(meta.people?.cab || []), ...(meta.people?.builders || [])];
-  return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11.5, color: t.sidebarMuted, padding: "4px 10px 10px" }}>
-      Acting as
-      <select aria-label="Acting as" value={actorName()} onChange={(e) => { setActorName(e.target.value); window.location.reload(); }} style={{
-        background: "#FFFFFF", color: "#090A39", border: "none", borderRadius: 8, padding: "6px 8px", fontSize: 13, fontFamily: "inherit",
-      }}>
-        {all.map((p) => <option key={p} value={p}>{p}</option>)}
-      </select>
-    </label>
-  );
-}
-
 function Header({ narrow, onMenu, menuOpen }) {
   const { t } = useTheme();
   const location = useLocation();
   const { data: meta } = useApi("/api/meta");
   const current = ROUTES.find((r) => location.pathname.startsWith(r.to)) || ROUTES[0];
   const operator = Boolean(writeToken());
-  const writable = PUBLIC_WRITES || operator;
   return (
     <header style={{
       minHeight: 56, borderBottom: `1px solid ${t.headerBorder}`, background: narrow ? t.sidebarBg : t.headerBg,
@@ -163,9 +126,9 @@ function Header({ narrow, onMenu, menuOpen }) {
       {!narrow && meta && (
         <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 11.5, color: t.headerMuted, flexWrap: "wrap" }}>
           <Pill tone="neutral">Synthetic data</Pill>
-          {writable ? <ActingAs people={meta.people} /> : null}
-          <Pill tone={writable ? "good" : "neutral"}>{operator ? "Operator" : writable ? "Open demo: changes reset when idle" : "Read-only link"}</Pill>
-          <Pill tone={meta.llm_configured ? "ai" : "neutral"}>{meta.llm_configured ? `Model: ${meta.llm_model}` : "No model key: runbook triage only"}</Pill>
+          <Pill tone="neutral">Today {meta.today.split("-").reverse().join("/")}</Pill>
+          {operator ? <Pill tone="good">Operator</Pill> : null}
+          <Pill tone={meta.llm_configured ? "ai" : "neutral"}>{meta.llm_configured ? `Assistant: ${meta.llm_model}` : "No model key: catalogue answers only"}</Pill>
         </div>
       )}
     </header>
@@ -196,7 +159,6 @@ export default function App() {
         {menuOpen && (
           <div style={{ background: t.sidebarBg, padding: "8px 10px 14px", borderBottom: `1px solid ${t.sidebarBorder}` }}>
             <NavList onPick={() => setMenuOpen(false)} />
-            <MenuActing />
             <div style={{ padding: "4px 10px" }}><ThemeButton /></div>
           </div>
         )}
@@ -204,6 +166,7 @@ export default function App() {
           {routes}
           <p style={{ fontSize: 11, lineHeight: 1.45, color: t.textMuted, margin: "26px 0 0" }}>{DISCLAIMER}</p>
         </main>
+        <UnifiedOrb />
       </div>
     );
   }
@@ -228,6 +191,7 @@ export default function App() {
           <div style={{ padding: "22px 28px 110px", maxWidth: 1520 }}>{routes}</div>
         </div>
       </main>
+      <UnifiedOrb />
     </div>
   );
 }

@@ -1,13 +1,16 @@
-"""Rate limiter on the anonymous endpoints (gate try-it, live triage)."""
+"""Rate limiter and request-size caps on the assistant endpoint."""
 
 from __future__ import annotations
 
 import pytest
 from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 
 from src.app.services import rate_limit
 from src.app.services.rate_limit import SlidingWindowLimiter, enforce_orb_rate_limit
+from src.app.routers.orb import OrbChatRequest, OrbRunAgentRequest
+from src.app.services.agents.schemas import PageContext
 from src.settings import settings
 
 
@@ -69,3 +72,27 @@ def test_global_gate(monkeypatch: pytest.MonkeyPatch):
     client = TestClient(_app())
     assert client.get("/ping", headers={"X-Forwarded-For": "8.8.8.8"}).status_code == 200
     assert client.get("/ping", headers={"X-Forwarded-For": "9.9.9.9"}).status_code == 429
+
+
+def test_message_length_capped():
+    OrbChatRequest(message="x" * settings.orb_max_message_chars)
+    with pytest.raises(ValidationError):
+        OrbChatRequest(message="x" * (settings.orb_max_message_chars + 1))
+    with pytest.raises(ValidationError):
+        OrbChatRequest(message="")
+
+
+def test_page_context_size_capped():
+    PageContext(module="properties", current_item={"address": "1 Test St", "num_bed": 3})
+    with pytest.raises(ValidationError):
+        PageContext(current_item={"blob": "x" * (settings.orb_max_context_chars + 1)})
+    with pytest.raises(ValidationError):
+        PageContext(current_item={f"k{i}": i for i in range(65)})
+    with pytest.raises(ValidationError):
+        PageContext(module="m" * 65)
+
+
+def test_run_agent_inputs_capped():
+    OrbRunAgentRequest(agent="data_query", inputs={"num_bed": 3})
+    with pytest.raises(ValidationError):
+        OrbRunAgentRequest(agent="data_query", inputs={"blob": "x" * (settings.orb_max_context_chars + 1)})

@@ -1,122 +1,107 @@
-// The front door: what is here, why, and where to start.
+// The group at a glance: this financial year against the same days last year.
 
 import { Link } from "react-router-dom";
-import { Activity, Bot, FileText, GitPullRequest, ShieldCheck, TableProperties, Wallet } from "lucide-react";
+import { Bar, BarChart } from "recharts";
 import { useTheme } from "../../context/ThemeContext.jsx";
-import { fmtInt, useApi } from "../../lib/api.js";
-import { audWhole } from "../../lib/place.jsx";
-import { Badge, Button, Callout, Card, ErrorNote, Grid, Loading, PageHeader, SectionTitle, Stat } from "../../lib/ui.jsx";
-
-function Step({ icon: Icon, title, to, days, ask, children }) {
-  const { t } = useTheme();
-  return (
-    <Card>
-      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 6 }}>
-        <span style={{ background: t.accentGlow, color: t.accent, borderRadius: 10, padding: 8, display: "flex" }}><Icon size={18} /></span>
-        <div>
-          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted }}>{days}</div>
-          <Link to={to} style={{ fontSize: 15.5, fontWeight: 750, color: t.text }}>{title}</Link>
-        </div>
-      </div>
-      <p style={{ fontSize: 12, color: t.textMuted, fontStyle: "italic", margin: "0 0 8px" }}>"{ask}"</p>
-      <div style={{ fontSize: 13, lineHeight: 1.55 }}>{children}</div>
-      <div style={{ marginTop: 10 }}><Link to={to}><Button>Open {title.toLowerCase()}</Button></Link></div>
-    </Card>
-  );
-}
+import { useOrb } from "../../context/OrbContext.jsx";
+import { fmtDate, fmtInt, fmtMonth, useApi } from "../../lib/api.js";
+import { Change, dollars, millions } from "../../lib/place.jsx";
+import { Button, Callout, Card, ChartFrame, ChartOrTable, ErrorNote, Grid, Loading, PageHeader, SectionTitle, Stat, Table, useChartParts } from "../../lib/ui.jsx";
 
 export default function Overview() {
   const { t } = useTheme();
+  const ch = useChartParts();
+  const orb = useOrb();
   const { data: d, error } = useApi("/api/overview");
+  const { data: meta } = useApi("/api/meta");
   if (error) return <ErrorNote error={error} />;
-  if (!d) return <><PageHeader title="Overview" /><Loading /></>;
-  const refused = d.gate.refuse || 0;
-  const agent = d.agent?.agent;
+  if (!d || !meta) return <><PageHeader title="Overview" /><Loading /></>;
+  const ty = d.sales.this_year;
+  const ly = d.sales.last_year;
+  const r = d.rentals;
+  const monthly = d.monthly.map((m) => ({ month: fmtMonth(m.month), commission: m.commission, sales: m.sales }));
+  const offices = [...d.offices].sort((a, b) => (b.commission || 0) - (a.commission || 0));
+  const arrearsPct = r.managed ? (r.in_arrears * 100) / r.managed : 0;
   return (
     <>
       <PageHeader
-        title="Good ideas into secure, supported tools: the first ninety days, working"
-        brief="Lead an AI-native engineering system ... so good ideas become secure, supported production tools"
-        subtitle="Staff have built useful tools with Claude and Copilot Studio, on Supabase, Firebase, Netlify and personal GitHub. This is the platform a lead would stand up to bring them in without stopping anyone building: find every tool and who owns it, gate what reaches production, govern each change through CAB, then watch, triage and cost what runs. Every number comes from the data, and the data is synthetic."
+        title="The agency this financial year"
+        brief="Our people are already using Claude and Copilot Studio to build tools that make their work easier"
+        subtitle={`A reporting site for a 26-office residential agency: sales from appraisal to settlement, the rent roll and arrears, each office's scorecard, vendor-paid marketing - with every figure checked before it is shown, and an assistant that answers questions with the query behind the answer. Financial year to date is 01/07/2026 to ${fmtDate(meta.today)}; each comparison is with the same days a year earlier.`}
       />
       <Callout tone="neutral" title="What this is">
-        Built with Claude Code for an application to Place Estate Agents, and named for it. Not affiliated with or endorsed by Place; the tools,
-        people, code, bills and alerts are invented, of the kinds the advertisement describes. Nothing here claims to know Place's tools, vendors or
-        numbers - finding those out is what days 1 to 30 are for.
+        The kind of tool Place's staff are building, built the way a platform lead would want it built: one source of the numbers, data checks
+        before anything reaches a report, tests, and a deployment that costs a few dollars a month. Built with Claude Code for an application to
+        Place Estate Agents, and named for it. Not affiliated with or endorsed by Place: the 26 offices are from the advertisement, and every
+        office, person, property and figure is invented.
       </Callout>
       <Grid cols={4} min={190}>
-        <Stat label="Tools found" value={fmtInt(d.tools)} emphasis sub={`${d.tools - d.declared} that nobody declared in the survey`} />
-        <Stat label="Refused by the production gate" value={fmtInt(refused)} tone={refused ? "critical" : undefined}
-          sub={`${fmtInt(d.personal_records_refused)} personal records in them; ${d.gate.hold || 0} more held`} />
-        <Stat label="Alerts to pages" value={`${fmtInt(d.alerts)} to ${d.pages}`} sub={`${d.incidents_paged} of ${d.incidents} real incidents still paged`} />
-        <Stat label="Cloud and AI spend last month" value={audWhole(d.monthly_cost)} sub={`${audWhole(d.removable)} a month removable now`} />
+        <Stat label="Sales (under contract)" value={fmtInt(ty.sales)} emphasis sub={<Change now={ty.sales} then={ly.sales} />} />
+        <Stat label="Commission written" value={millions(ty.commission)} sub={<Change now={ty.commission} then={ly.commission} />} />
+        <Stat label="Median days on market" value={`${ty.median_dom} days`} sub={<Change now={ty.median_dom} then={ly.median_dom} lowerIsBetter />} />
+        <Stat label="Auction clearance" value={`${ty.clearance_pct}%`} sub={<Change now={ty.clearance_pct} then={ly.clearance_pct} />} />
+      </Grid>
+      <div style={{ height: 12 }} />
+      <Grid cols={4} min={190}>
+        <Stat label="Properties managed" value={fmtInt(r.managed)} sub={`${dollars(r.weekly_rent_roll)} rent a week`} />
+        <Stat label="In arrears now" value={`${arrearsPct.toFixed(1)}%`} tone={arrearsPct > 8 ? "warning" : undefined}
+          sub={`${fmtInt(r.in_arrears)} tenancies; ${fmtInt(r.over_watch)} more than 14 days`} />
+        <Stat label="Leases ending in 60 days" value={fmtInt(r.renewals_60d)} sub="renewal conversations to start now" />
+        <Stat label="Urgent repairs open over 3 days" value={fmtInt(r.urgent_late)} tone={r.urgent_late ? "critical" : "good"} sub={`${fmtInt(r.open_jobs)} jobs open in all`} />
       </Grid>
 
-      <SectionTitle>The work, in the order the advertisement gives it</SectionTitle>
-      <Grid cols={3} min={300}>
-        <Step icon={TableProperties} title="Tool register" to="/register" days="Days 1 to 30"
-          ask="Inventory the tools staff have built, where they run and who owns them">
-          {d.tools} tools joined from ten exports by the keys they share, never by name. {d.critical_flags} critical flags: owners who
-          have left, DNS names pointing at nothing. {d.holds} things the evidence cannot decide are held for a person.
-        </Step>
-        <Step icon={ShieldCheck} title="Production gate" to="/gate" days="Days 31 to 60"
-          ask="Guardrails ... so AI-generated code or commands cannot put vulnerabilities into production">
-          Eleven checks aimed at what AI-written pilot code gets wrong, each priced by switching it off. A refusal blocks; a hold waits
-          for a person. Fix a tool and watch the gate re-scan the code.
-        </Step>
-        <Step icon={GitPullRequest} title="Changes" to="/changes" days="Days 31 to 60"
-          ask="Set up one Place GitHub organisation and move tools into it">
-          Migrate, release, merge, retire, transfer: proposed with evidence the server attaches, decided by a CAB member who did not
-          propose it, refused when the gate says no. {d.refusals} refusals in the audit log so far.
-        </Step>
-        <Step icon={Activity} title="Monitoring" to="/monitoring" days="Days 61 to 90"
-          ask="Cut alert noise and speed up incident response for Place-built apps">
-          Four weeks of alerts through six noise rules: {fmtInt(d.alerts)} alerts became {d.pages} pages, and every real incident still paged.
-          Every alternative tried is kept with what it would have missed.
-        </Step>
-        <Step icon={Bot} title="Incident triage" to="/triage" days="Days 61 to 90"
-          ask="Log summarisation agents to cut alert noise and speed up incident response">
-          An agent that investigates a page with six read-only tools over masked logs and proposes a fix, graded against the runbook on
-          real, hard and adversarial cases. {agent ? <>Graded: <b>{agent.passed} of {agent.cases}</b>.</> : "Not yet graded on this deployment."}
-        </Step>
-        <Step icon={Wallet} title="Cloud cost" to="/cost" days="Days 61 to 90"
-          ask="Audit billing, track resource drift and reduce cloud spend">
-          Bills from five platforms and the expense claims that pay them, matched; idle, oversized, duplicated and drifted resources; and
-          the tools billed to a leaver's card.
-        </Step>
-      </Grid>
-      <div style={{ marginTop: 14 }}>
-        <Card title={<span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}><FileText size={16} /> CAB report</span>}
-          hint="The fortnightly report, assembled from the data on request: decisions wanted, changes made, refusals, risks due, cost.">
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-            <Link to="/cab-report"><Button>Open the CAB report</Button></Link>
-            {Object.entries(d.changes).map(([k, v]) => <Badge key={k} tone="neutral">{v} {k}</Badge>)}
-          </div>
-        </Card>
-      </div>
+      <SectionTitle>Commission written, by month</SectionTitle>
+      <Card>
+        <ChartOrTable
+          chart={(
+            <ChartFrame height={240}>
+              <BarChart data={monthly} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
+                {ch.grid}
+                {ch.xAxis({ dataKey: "month", interval: 1 })}
+                {ch.yAxis({ tickFormatter: (v) => `$${(v / 1_000_000).toFixed(0)}M`, width: 48 })}
+                {ch.tooltip({ formatter: (v, n) => [n === "commission" ? dollars(v) : fmtInt(v), n === "commission" ? "Commission" : "Sales"] })}
+                <Bar dataKey="commission" name="commission" fill={t.chart[0]} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ChartFrame>
+          )}
+          table={<Table rows={monthly} columns={[
+            { key: "month", label: "Month" }, { key: "sales", label: "Sales", align: "right", render: (x) => fmtInt(x.sales) },
+            { key: "commission", label: "Commission", align: "right", render: (x) => dollars(x.commission) }]} />}
+        />
+        <p style={{ fontSize: 12, color: t.textMuted, margin: "6px 0 0" }}>A sale counts in the month it went under contract. November is to date.</p>
+      </Card>
 
-      <SectionTitle>Built the way the platform would be run</SectionTitle>
-      <Grid cols={3} min={260}>
-        <Card title="The build checks itself">
-          <p style={{ fontSize: 13, marginTop: 0 }}>The data is generated from a seed with integer arithmetic, then these must hold or there is no image:</p>
-          <ul style={{ fontSize: 12.5, paddingLeft: 18, margin: 0, lineHeight: 1.55 }}>{d.acceptance.map((a) => <li key={a}>{a}</li>)}</ul>
+      <SectionTitle right={<Link to="/offices"><Button>All 26 offices</Button></Link>}>Offices by commission this year</SectionTitle>
+      <Grid cols={2} min={320}>
+        <Card title="Top five" pad={0}>
+          <Table rows={offices.slice(0, 5)} columns={[
+            { key: "office", label: "Office", render: (o) => <Link to={`/sales?office=${o.office_code}`} style={{ color: t.accent, fontWeight: 650 }}>{o.office}</Link> },
+            { key: "region", label: "Region" },
+            { key: "commission", label: "Commission", align: "right", render: (o) => dollars(o.commission) },
+            { key: "vs", label: "", render: (o) => <Change now={o.commission} then={o.commission_last_year} /> },
+          ]} />
         </Card>
-        <Card title="Every write is governed">
-          <p style={{ fontSize: 13, marginTop: 0 }}>
-            Proposals, decisions, fixes and key rotations are audit-logged and refused - not warned - when a rule says no. Nobody decides
-            their own change, only the platform lead implements, and an approved change is checked again when it is implemented.
-          </p>
-        </Card>
-        <Card title="The gate runs on this repository too">
-          <p style={{ fontSize: 13, marginTop: 0 }}>
-            The same checks run in this demo's own CI, with each exemption listed and reasoned in the repository (the generator that writes the
-            seeded defects is one). The <Link to="/paved-road" style={{ color: t.accent, fontWeight: 650 }}>paved road</Link> puts them in every tool's CI.
-          </p>
+        <Card title="Bottom five" pad={0}>
+          <Table rows={offices.slice(-5).reverse()} columns={[
+            { key: "office", label: "Office", render: (o) => <Link to={`/sales?office=${o.office_code}`} style={{ color: t.accent, fontWeight: 650 }}>{o.office}</Link> },
+            { key: "region", label: "Region" },
+            { key: "commission", label: "Commission", align: "right", render: (o) => dollars(o.commission) },
+            { key: "vs", label: "", render: (o) => <Change now={o.commission} then={o.commission_last_year} /> },
+          ]} />
         </Card>
       </Grid>
-      <p style={{ fontSize: 12, color: t.textMuted, marginTop: 16 }}>
-        An open demo: pick who you are acting as at the top, then propose, decide, fix or implement. The rules still refuse what they should - try
-        approving your own change - and each refusal is in the audit log. Changes go back to the built data whenever the site has been idle.
+
+      <SectionTitle>Ask instead of looking</SectionTitle>
+      <Card hint="The assistant (bottom right, on every page) writes one query, checks it, runs it read-only, and shows the query with the answer.">
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {["Who are the top ten agents by commission this financial year?", "Which offices have the most tenancies more than 14 days in arrears?",
+            "How many leases end in the next 60 days, by office?"].map((q) => (
+            <Button key={q} tone="ai" onClick={() => orb.openWithPrompt(q, { module: "overview" })}>{q}</Button>
+          ))}
+        </div>
+      </Card>
+      <p style={{ fontSize: 12.5, color: t.textMuted, marginTop: 14 }}>
+        {fmtInt(d.checks)} records failed a data check and are kept out of these figures - see <Link to="/data-checks" style={{ color: t.accent, fontWeight: 650 }}>Data checks</Link>.
       </p>
     </>
   );

@@ -1,11 +1,10 @@
 # Multi-stage build for the FastAPI backend.
 #
-# The builder stage builds everything - lands the synthetic exports, builds
-# the register, runs the gate, the cost model and the monitoring rules, runs
-# the acceptance checks - from code and a seed, then checks every table
-# against the digests pinned in infra-azure/build.sha256. A mismatch, or a
-# failing acceptance check, fails the image build: an image that cannot
-# reproduce the pinned output is never pushed.
+# The builder stage builds everything - generates the agency's data from a
+# seed, runs the data checks, creates the reporting views and runs the
+# acceptance checks - then checks every table against the digests pinned in
+# infra-azure/build.sha256. A mismatch, or a failing acceptance check, fails
+# the image build: an image that cannot reproduce the pinned output is never pushed.
 #
 # So the runtime needs no blob store and no database server, and a cold start
 # is the time it takes uvicorn to start.
@@ -26,9 +25,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 COPY backend/src ./backend/src
 COPY scripts ./scripts
 COPY infra-azure/build.sha256 ./infra-azure/build.sha256
-# The last graded eval, shown on the Incident triage page; the paved-road template.
+# The last graded eval, shown on the Ask the data page.
 COPY evals ./evals
-COPY paved-road ./paved-road
 
 ARG GIT_SHA=""
 ENV GIT_SHA=$GIT_SHA

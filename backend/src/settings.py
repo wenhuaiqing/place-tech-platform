@@ -34,13 +34,13 @@ class Settings(BaseSettings):
     orb_rate_limit_per_ip: int = 20
     orb_rate_limit_global: int = 300
     orb_rate_limit_window_seconds: float = 300.0
+    orb_max_message_chars: int = 2000
+    orb_max_context_chars: int = 8000
 
-    # Shared secret for the operator. Fail closed: empty refuses token-only writes.
+    # The operator's token: resets the run log and lifts the rate limits for a
+    # live walkthrough. Nothing else writes; the reports are read-only.
     demo_write_token: str = ""
-    # Open demo: any visitor can propose, decide and implement changes, acting
-    # as one of the demo people. The rules still refuse; changes live in the
-    # working copy, which goes back to the build on every cold start.
-    public_writes: bool = True
+    public_writes: bool = False
     write_rate_limit_per_ip: int = 120
     write_rate_limit_global: int = 1500
 

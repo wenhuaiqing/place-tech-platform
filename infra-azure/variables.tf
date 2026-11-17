@@ -74,20 +74,20 @@ variable "budget_aud" {
 }
 
 variable "llm_base_url" {
-  description = "OpenAI-protocol endpoint for the triage agent."
+  description = "OpenAI-protocol endpoint for the data agent."
   type        = string
   default     = "https://generativelanguage.googleapis.com/v1beta/openai/"
 }
 
 variable "llm_api_key" {
-  description = "Key for that endpoint. Empty deploys without a model: the runbook triages and the page says so."
+  description = "Key for that endpoint. Empty deploys without a model: catalogue questions are answered and the page says so."
   type        = string
   sensitive   = true
   default     = ""
 }
 
 variable "llm_chat_model" {
-  description = "Model for the triage agent. A small, fast one: a page is up to five sequential calls."
+  description = "Model for the data agent. A small, fast one: a question is three or four sequential calls."
   type        = string
   default     = "gemini-3.5-flash-lite"
 }

@@ -1,7 +1,0 @@
-# Files the production gate skips in this repository, each with its reason.
-# An exemption is a reviewed decision: it is printed on every run.
-backend/src/app/pipeline/code.py    # writes the seeded defects into the synthetic repositories, on purpose
-backend/src/app/gate/rules.py       # the checks themselves: they name what they look for
-backend/src/app/pipeline/discover.py  # recognises model SDK imports to build the AI register
-backend/tests/                      # tests feed the checks key-shaped strings and open rules
-frontend/src/pages/Gate/Gate.jsx  # the try-it sample is a deliberately bad snippet for visitors to scan

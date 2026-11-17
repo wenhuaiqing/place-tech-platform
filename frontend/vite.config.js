@@ -8,6 +8,7 @@ export default defineConfig({
     strictPort: true,
     // Only the backend's paths are proxied; everything else is a page the SPA owns.
     proxy: {
+      "/orb":    { target: "http://localhost:8071", changeOrigin: true },
       "/api":    { target: "http://localhost:8071", changeOrigin: true },
       "/health": { target: "http://localhost:8071", changeOrigin: true },
     },

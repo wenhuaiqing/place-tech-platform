@@ -28,7 +28,7 @@ locals {
   environment_id  = local.own_environment ? azurerm_container_app_environment.main[0].id : var.existing_environment_id
 }
 
-# Resetting the demo needs this (visitors can propose and decide under a rate limit). The operator opens the site once
+# The operator's token: resets the assistant's run log and lifts its rate limit. Opened once
 # with ?write_token=<value>; the link itself is never published.
 resource "random_password" "write_token" {
   length  = 32

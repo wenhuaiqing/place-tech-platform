@@ -1,62 +1,46 @@
-// Drive a visitor's path in a real browser - no token: approving your own
-// change refused, a second CAB member's approval recorded, implementation
-// refused to anyone but the platform lead, then a fix branch that still
-// refuses until the key's rotation is recorded. The token is used only for
-// the reset at the end, which visitors cannot do.
+// Drive a reader's path in a real browser: filter a report to one office,
+// follow an office from the scorecard, and ask the assistant a question -
+// which, with no model key, is answered from the catalogue and says so.
 //
-//   BASE=http://localhost:5271 TOKEN=<DEMO_WRITE_TOKEN> node evals/flow.mjs
+//   BASE=http://localhost:5271 node evals/flow.mjs
 
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE || "http://localhost:5271";
-const TOKEN = process.env.TOKEN || "";
 const CHANNEL = process.env.BROWSER_CHANNEL || undefined;
 const OUT = process.env.OUT || "./page-shots";
 const browser = await chromium.launch(CHANNEL ? { channel: CHANNEL } : {});
 const page = await (await browser.newContext({ viewport: { width: 1500, height: 1000 } })).newPage();
 let steps = 0;
 const expect = async (name, locator) => {
-  await locator.first().waitFor({ timeout: 25_000 });
+  await locator.first().waitFor({ timeout: 30_000 });
   steps += 1;
   console.log(`ok   ${name}`);
 };
-const actAs = async (who, url) => {
-  await page.evaluate((w) => sessionStorage.setItem("place_demo_actor", w), who);
-  await page.goto(url, { waitUntil: "networkidle" });
-};
 
-await page.goto(`${BASE}/changes`, { waitUntil: "networkidle" });
-await expect("a visitor gets the open demo, no token", page.getByText("Open demo: changes reset when idle"));
+await page.goto(`${BASE}/sales`, { waitUntil: "networkidle" });
+await expect("the group's sales", page.getByText("Sales - all offices"));
+await page.getByLabel("Office").selectOption("K");
+await expect("filtered to one office", page.getByText("Sales - Office K"));
+await expect("its own agents", page.getByText("Agents in Office K"));
 
-await actAs("CAB - Head of Innovation", `${BASE}/changes`);
-await page.getByLabel("Decision note for CR-006").fill("Approving my own again.");
-await page.getByTitle("Approve CR-006").click();
-await expect("the proposer cannot decide their own change", page.getByText(/You proposed this change, so you cannot decide it/));
+await page.goto(`${BASE}/offices`, { waitUntil: "networkidle" });
+await page.getByText("Office D", { exact: true }).click();
+await expect("an office on the scorecard opens its sales", page.getByText("Sales - Office D"));
 
-await actAs("CAB - Business Systems", `${BASE}/changes`);
-await page.getByLabel("Decision note for CR-006").fill("Nobody uses it; the owner has left.");
-await page.getByTitle("Approve CR-006").click();
-await expect("another CAB member approves it", page.getByText("CR-006 approved."));
+await page.goto(`${BASE}/rentals`, { waitUntil: "networkidle" });
+await expect("the arrears watch list", page.getByText("The watch list: more than 14 days in arrears"));
 
-await actAs("Builder - Mia K.", `${BASE}/changes`);
-await page.getByTitle("Implement CR-006").click();
-await expect("only the platform lead implements", page.getByText(/The platform lead implements approved changes/));
+await page.getByRole("button", { name: "Ask the data" }).last().click({ force: true });
+const box = page.getByPlaceholder("Ask about sales, rentals, arrears or marketing...");
+await box.fill("Which offices have the most tenancies more than 14 days in arrears?");
+await box.press("Enter");
+await expect("the assistant answers with a table", page.getByText(/over_14_days|Office D/).last());
+await page.screenshot({ path: `${OUT}/flow-assistant.png` });
 
-await actAs("Platform lead", `${BASE}/changes`);
-await page.getByTitle("Implement CR-006").click();
-await expect("the platform lead implements it", page.getByText("CR-006 implemented."));
+await page.goto(`${BASE}/ask`, { waitUntil: "networkidle" });
+await page.getByRole("button", { name: /DELETE FROM listing/ }).click();
+await expect("the gate refuses a write", page.getByText("Refused"));
 
-await page.goto(`${BASE}/gate?tool=T-030`, { waitUntil: "networkidle" });
-await page.getByRole("button", { name: /Apply the fix branch/ }).click();
-await expect("the fix branch removes the key, but the gate still refuses", page.getByText("Fix branch applied: the gate now says refuse."));
-await page.getByRole("button", { name: "Record the key rotation" }).click();
-await expect("recording the rotation lets it pass", page.getByText("Rotation recorded: the gate now says pass."));
-await page.screenshot({ path: `${OUT}/flow-gate.png`, fullPage: false });
-
-await page.goto(`${BASE}/changes`, { waitUntil: "networkidle" });
-await expect("both refusals are in the audit log", page.getByText(/You proposed this change/).first());
-
-const reset = await page.evaluate(async (tok) => (await fetch("/api/reset", { method: "POST", headers: { "X-Write-Token": tok } })).status, TOKEN);
-if (reset !== 200) throw new Error(`reset returned ${reset}`);
 await browser.close();
 console.log(`\n${steps} steps passed`);

@@ -45,10 +45,6 @@ jobs:
           uv sync --frozen
           uv run python ../scripts/build_platform.py
 
-      - name: The production gate, on this repository
-        working-directory: backend
-        run: uv run python -m src.app.gate.cli ..
-
       - name: Tests
         working-directory: backend
         run: uv run pytest -q
@@ -66,14 +62,14 @@ jobs:
           npm run build
           npx playwright install --with-deps chromium
 
-      - name: Every page in a browser, then the operator's path
+      - name: Every page in a browser, then a reader's path
         run: |
           (cd backend && uv run uvicorn src.main:app --port 8071 &)
           (cd frontend && npx vite &)
           for i in $(seq 1 30); do curl -sf http://localhost:8071/health && curl -sf -o /dev/null http://localhost:5271 && break; sleep 1; done
           cd frontend
           BASE=http://localhost:5271 node evals/check-pages.mjs
-          BASE=http://localhost:5271 TOKEN=$DEMO_WRITE_TOKEN node evals/flow.mjs
+          BASE=http://localhost:5271 node evals/flow.mjs
           pkill -f "uvicorn src.main:app" || true
           pkill -f vite || true
 

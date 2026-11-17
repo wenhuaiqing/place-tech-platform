@@ -1,4 +1,4 @@
-# Azure deployment for the Place technology platform demo.
+# Azure deployment for the Place business reporting demo.
 #
 # As small as it can be, on purpose. The data is built inside the image and
 # verified against pinned digests, so there is no database server, no storage

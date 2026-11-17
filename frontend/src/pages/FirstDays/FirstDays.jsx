@@ -1,5 +1,4 @@
-// The advertisement's own list, mapped to where each point is shown working,
-// then the first ninety days - as a plan that starts by listening.
+// The advertisement's own list, and the first ninety days as a plan that starts by listening.
 
 import { Link } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext.jsx";
@@ -7,58 +6,50 @@ import { DISCLAIMER } from "../../config.js";
 import { Callout, Card, Grid, PageHeader, SectionTitle, Table } from "../../lib/ui.jsx";
 
 const ASKED = [
-  ["AI agent and workflow orchestration: integrate agentic tools ... into the software lifecycle. Help staff move useful tools into Place's GitHub with proper back ends and credentials.",
-   "The paved road every tool moves onto: the gate in CI, dependency review, CodeQL, CODEOWNERS, a branch ruleset, a register entry and a Terraform module. Each refusal is a sentence Claude Code can act on. This demo was built with Claude Code.",
-   [["Paved road", "/paved-road"], ["Changes", "/changes"]]],
-  ["Policy and governance: guardrails, security checks, code review and data compliance ... keep the app and AI tool register current, and report to CAB.",
-   "Eleven checks over every tool's code and history, refused or held, each priced by ablation; a register of every tool and every AI route, from the evidence; changes decided by CAB with separation of duties enforced; a CAB report assembled from the data.",
-   [["Production gate", "/gate"], ["AI register", "/ai-register"], ["CAB report", "/cab-report"]]],
-  ["Incident triage and predictive SRE: monitoring and log summarisation agents to cut alert noise and speed up incident response.",
-   "Six noise rules take four weeks of alerts to a handful of pages with every incident still paged, and the rejected settings are kept with what they would have missed. A triage agent over masked snapshots, graded against the runbook on hard and adversarial cases. Straight-line forecasts for limits and certificates.",
-   [["Monitoring", "/monitoring"], ["Incident triage", "/triage"]]],
-  ["Cloud cost optimisation: audit billing, track resource drift and reduce cloud spend, consolidating hosting platforms over time.",
-   "Five platforms' bills and the expense claims that pay them, matched and attributed to tools; idle, oversized, duplicate and drifted resources; tools billed to a leaver's card; a labelled planning figure for the consolidated platform.",
-   [["Cloud cost", "/cost"]]],
-  ["Owns admin access and security ownership for the new platforms (Azure sandbox, GitHub, Supabase).",
-   "Only the platform lead implements changes and records key rotations; the Azure sandbox is checked against Terraform for anything made by hand.",
-   [["Changes", "/changes"], ["Cloud cost - drift", "/cost"]]],
-  ["Days 1 to 30: Inventory the tools staff have built, where they run and who owns them.",
-   "Ten exports joined by the keys they share, never by name; owners who have left, tools nobody declared, DNS names that point at nothing; what the evidence cannot decide is held for a person.",
-   [["Tool register", "/register"], ["How it was found", "/discovery"]]],
-  ["Solid security basics, including secrets management and what AI-written code tends to get wrong.",
-   "A key removed from the code still refuses until it is rotated, because it is in the history. A service-role key in the browser, rules opened during testing, SQL from input, a package name a model invented.",
-   [["Production gate", "/gate?tool=T-030"]]],
+  ["Help staff move useful tools into Place's GitHub with proper back ends and credentials.",
+   "This site is one such tool, taken the whole way: one repository, CI, data checks, tests in a browser, secrets on the server, Terraform, monitoring and a budget alert.",
+   [["How it is run", "/how-it-is-run"]]],
+  ["Run guardrails, security checks, code review and data compliance so AI-generated code or commands cannot put vulnerabilities into production.",
+   "The data checks stop bad records reaching a report. The assistant's SQL passes a gate before it runs, and it is graded on questions it must refuse.",
+   [["Data checks", "/data-checks"], ["Ask the data", "/ask"]]],
+  ["Uses AI coding and agent tools ... daily and can show real work done with them.",
+   "Built with Claude Code. An assistant that answers in plain English with the query behind every figure, graded against reference answers.",
+   [["Ask the data", "/ask"]]],
+  ["Monitoring, observability and cloud cost management.",
+   "Health probes, capped logs, a run log for the assistant, scale to zero outside business hours, and a monthly budget alert.",
+   [["How it is run", "/how-it-is-run"]]],
+  ["Reads and writes code (Python, TypeScript or C#) and works confidently with APIs.",
+   "FastAPI and DuckDB behind, React in front, an OpenAI-protocol model client that changes provider by configuration.",
+   [["Overview", "/overview"]]],
   ["Clear plain English with non-technical staff, executives and vendors.",
-   "Every refusal says what to do next in one sentence. The CAB report puts decisions first.",
-   [["CAB report", "/cab-report"]]],
+   "Every report says what it counts and what it leaves out, and every assumption is labelled where it is used.",
+   [["Rentals", "/rentals"], ["Sales", "/sales"]]],
 ];
 
 const PLAN = [
   {
     when: "Days 1 to 30: listen, then count",
     items: [
-      "Fifteen minutes with each person who has built something: what it does, who uses it, what would happen if it stopped tomorrow. The survey is the conversation, not a form.",
-      "Meet Productivity and agree what they own and what the platform owns: identity, licensing and Microsoft 365 stay theirs.",
-      "Ask each platform for the exports this demo starts from, and build the register. First fixes are the ones that are dangerous today: a live key in a public repository, personal data readable by anyone.",
-      "Meet NetEngine, Wingman, WMX and PPG to learn how their systems connect to staff-built tools, before changing anything near them.",
+      "Fifteen minutes with each person who has built something: what it does, who uses it, what would happen if it stopped tomorrow.",
+      "Inventory the tools from what they say and from the platforms themselves - Supabase, Firebase, Netlify, GitHub, Copilot Studio - with an owner for each.",
+      "Meet Productivity and the vendors, and agree who owns what before changing anything near their systems.",
+      "Fix what is dangerous today: a key in a public repository, personal data readable by anyone.",
     ],
   },
   {
     when: "Days 31 to 60: bring it in",
     items: [
-      "One Place GitHub organisation with the paved road, secret scanning and push protection on. Move the most-used tool with no personal data first, so the road is proven on something safe.",
-      "Give every orphaned tool a current owner before it moves. Retire what nobody uses, with CAB's agreement.",
-      "Stand up the Azure sandbox from Terraform, so drift is visible from day one.",
-      "Fix and migrate the tier 1 tools one at a time, with their builders, not for them.",
+      "One Place GitHub organisation with branch protection, secret scanning and the checks in CI. Move the most-used tool with no personal data first, so the path is proven on something safe.",
+      "Give every tool whose builder has left a current owner. Retire what nobody uses.",
+      "Stand up the Azure sandbox from Terraform, so anything made by hand is visible from day one.",
     ],
   },
   {
     when: "Days 61 to 90: run it, and report",
     items: [
-      "Agree the platform standard and the AI guardrails with CAB: the tiers, the gate's refuse and hold lists, the approved AI routes.",
-      "Monitoring and the noise rules on everything that has moved; a triage agent graded on Place's own incidents before anyone relies on it.",
-      "Cost reporting by tool, with nothing on a personal card.",
-      "The first CAB report: decisions wanted, what changed, what the rules refused, what is due.",
+      "Agree the platform standard and the AI guardrails with CAB: what every tool needs before production, and which data may go to which model.",
+      "Monitoring and cost reporting on everything that has moved, by tool.",
+      "The first CAB report: what moved, what was refused and why, what is due.",
     ],
   },
 ];
@@ -70,11 +61,11 @@ export default function FirstDays() {
       <PageHeader
         title="First 90 days"
         brief="Your first 90 days"
-        subtitle="The advertisement's own list, mapped to where each point is shown working here. Then a plan for the first ninety days that starts with the people who built the tools - because the right first move is the one they need, and a demo cannot know that."
+        subtitle="The advertisement's list, mapped to where each point is shown here. Then a plan for the first ninety days that starts with the people who built the tools - the right first move is the one they need, and a demo cannot know that."
       />
       <Callout tone="neutral" title="What this is and is not">
-        {DISCLAIMER} The logo and colours are Place's own public ones, used to show the work in Place's context. Nothing here claims to know
-        Place's tools, vendors, policies or numbers: the 26 offices and 700 staff are from the advertisement, and everything else is invented.
+        {DISCLAIMER} The logo and colours are Place's own public ones, used to show the work in Place's context. Nothing here claims to know Place's
+        offices, results, systems or tools: the 26 offices are from the advertisement, and everything else is invented.
       </Callout>
       <SectionTitle>What the role asks for, and where it is shown</SectionTitle>
       <Card pad={0} rule={false}>
@@ -100,10 +91,9 @@ export default function FirstDays() {
       <Card>
         <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7 }}>
           <li>Which staff-built tool would hurt most if it stopped on a Saturday morning, and who would notice first?</li>
-          <li>Where does the AI Governance Policy stand today, and which data may go to which model?</li>
-          <li>What does Productivity administer in Copilot Studio and Entra, and what would they want the platform to own?</li>
-          <li>Which of the vendors' systems do staff-built tools read from or write to?</li>
-          <li>How does CAB like to receive a change: a form, a meeting, a report?</li>
+          <li>Where does the AI Governance Policy stand, and which data may go to which model?</li>
+          <li>What do Productivity administer in Entra and Copilot Studio, and what would they want the platform to own?</li>
+          <li>Which reports do offices still build by hand each month, and from which systems?</li>
         </ul>
       </Card>
     </>
