@@ -6,7 +6,7 @@ import { useTheme } from "../../context/ThemeContext.jsx";
 import { useOrb } from "../../context/OrbContext.jsx";
 import { fmtDate, fmtInt, fmtMonth, useApi } from "../../lib/api.js";
 import { Change, dollars, millions } from "../../lib/place.jsx";
-import { Button, Callout, Card, ChartFrame, ChartOrTable, ErrorNote, Grid, Loading, PageHeader, SectionTitle, Stat, Table, useChartParts } from "../../lib/ui.jsx";
+import { Badge, Button, CTAButton, Callout, Card, ChartFrame, ChartOrTable, ErrorNote, Grid, Loading, PageHeader, SectionTitle, Stat, Table, useChartParts } from "../../lib/ui.jsx";
 
 export default function Overview() {
   const { t } = useTheme();
@@ -14,6 +14,7 @@ export default function Overview() {
   const orb = useOrb();
   const { data: d, error } = useApi("/api/overview");
   const { data: meta } = useApi("/api/meta");
+  const { data: wo } = useApi("/api/work-orders");
   if (error) return <ErrorNote error={error} />;
   if (!d || !meta) return <><PageHeader title="Overview" /><Loading /></>;
   const ty = d.sales.this_year;
@@ -49,6 +50,27 @@ export default function Overview() {
         <Stat label="Leases ending in 60 days" value={fmtInt(r.renewals_60d)} sub="renewal conversations to start now" />
         <Stat label="Urgent repairs open over 3 days" value={fmtInt(r.urgent_late)} tone={r.urgent_late ? "critical" : "good"} sub={`${fmtInt(r.open_jobs)} jobs open in all`} />
       </Grid>
+
+      <SectionTitle>The workflow: maintenance work orders</SectionTitle>
+      <Card>
+        <div style={{ display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+          <div style={{ flex: "1 1 420px", minWidth: 0 }}>
+            <p style={{ fontSize: 14, fontWeight: 650, margin: "0 0 6px" }}>Try approving your own work order.</p>
+            <p style={{ fontSize: 13, lineHeight: 1.55, margin: 0, color: t.textMuted }}>
+              The one place this site writes. A property manager raises a job with a quote, someone else decides it, the largest need the head of
+              property management, and a bill over quote needs a reason. The server refuses what the rules forbid, and every refusal lands in the
+              audit log. Pick who you are acting as and try it.
+            </p>
+            {wo && (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                <Badge tone="warning">{wo.orders.filter((o) => o.status === "awaiting approval").length} awaiting a decision</Badge>
+                <Badge tone="critical">{wo.audit.filter((a) => a.outcome === "refused").length} refusals in the audit log</Badge>
+              </div>
+            )}
+          </div>
+          <Link to="/work-orders"><CTAButton>Open the work orders</CTAButton></Link>
+        </div>
+      </Card>
 
       <SectionTitle>Commission written, by month</SectionTitle>
       <Card>

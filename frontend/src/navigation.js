@@ -6,12 +6,12 @@ import { Building2, ClipboardCheck, Compass, FileSearch, Home, KeyRound, Megapho
 const PAGE_MODULES = import.meta.glob("./pages/*/*.jsx", { eager: true });
 
 export const MODULE_META = {
-  Overview:   { label: "Overview",          icon: Compass,           group: "The business", order: 0 },
-  Sales:      { label: "Sales",             icon: Home,              group: "The business", order: 1, slug: "sales" },
-  Rentals:    { label: "Rentals",           icon: KeyRound,          group: "The business", order: 2, slug: "rentals" },
-  WorkOrders: { label: "Work orders",       icon: ClipboardCheck,    group: "The business", order: 3, slug: "work-orders" },
-  Offices:    { label: "Offices",           icon: Building2,         group: "The business", order: 4, slug: "offices" },
-  Marketing:  { label: "Marketing",         icon: Megaphone,         group: "The business", order: 4.5, slug: "marketing" },
+  Overview:   { label: "Overview",          icon: Compass,           group: "Start here", order: 0 },
+  WorkOrders: { label: "Work orders",       icon: ClipboardCheck,    group: "Workflow", order: 1, slug: "work-orders" },
+  Sales:      { label: "Sales",             icon: Home,              group: "Reports", order: 2, slug: "sales" },
+  Rentals:    { label: "Rentals",           icon: KeyRound,          group: "Reports", order: 3, slug: "rentals" },
+  Offices:    { label: "Offices",           icon: Building2,         group: "Reports", order: 4, slug: "offices" },
+  Marketing:  { label: "Marketing",         icon: Megaphone,         group: "Reports", order: 4.5, slug: "marketing" },
   Checks:     { label: "Data checks",       icon: ShieldCheck,       group: "Trusting the numbers", order: 5, slug: "data-checks" },
   Ask:        { label: "Ask the data",      icon: MessageSquareText, group: "Trusting the numbers", order: 6, slug: "ask" },
   Built:      { label: "How it is run",     icon: Wrench,            group: "The role", order: 7, slug: "how-it-is-run" },
@@ -33,5 +33,6 @@ export function getRoutes() {
 }
 
 export const GROUP_NOTES = {
+  Workflow: "Try it: approve your own work order. The rules refuse, and say why.",
   "Trusting the numbers": "Every figure is checked before it is shown.",
 };
