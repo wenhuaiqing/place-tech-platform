@@ -47,6 +47,22 @@ def _nothing_in_the_future(con):
     return n == 0, f"{n} listings or contracts dated after today"
 
 
+def _nobody_decides_their_own(con):
+    n = _q(con, "SELECT count(*) FROM work_order WHERE decided_by = raised_by")
+    return n == 0, f"{n} work orders decided by the person who raised them"
+
+
+def _head_approves_the_large_ones(con):
+    n = _q(con, f"""SELECT count(*) FROM work_order WHERE status IN ('approved', 'completed') AND quote_cents > {ref.WO_HEAD_LIMIT_CENTS}
+                    AND decided_by <> 'Head of property management'""")
+    return n == 0, f"{n} work orders over the higher limit approved by someone else"
+
+
+def _every_step_audited(con):
+    n = _q(con, "SELECT count(*) FROM work_order w WHERE NOT EXISTS (SELECT 1 FROM audit_log a WHERE a.project_id = w.wo_id AND a.action = 'raised')")
+    return n == 0, f"{n} work orders with no 'raised' entry in the audit log"
+
+
 CHECKS = [
     ("Every seeded data-entry error is found by a check", _every_error_found),
     ("No quarantined record reaches a report", _no_quarantined_in_reports),
@@ -55,6 +71,9 @@ CHECKS = [
     ("Agent commission adds up to the office total", _commission_reconciles),
     ("A property has at most one current tenancy", _one_current_tenancy_per_property),
     ("Nothing is listed or contracted after today", _nothing_in_the_future),
+    ("Nobody decides a work order they raised", _nobody_decides_their_own),
+    ("Only the head of property management approves the largest work orders", _head_approves_the_large_ones),
+    ("Every work order is in the audit log", _every_step_audited),
 ]
 
 

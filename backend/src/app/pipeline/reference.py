@@ -58,3 +58,18 @@ SEEDED = {
     "listing_without_agent": 3,
     "bond_without_tenancy": 4,      # a bond receipt that matches no tenancy
 }
+
+# ---- Work orders: the governed workflow ---------------------------------------------
+# ASSUMPTIONS, labelled on the page: the approval limits are invented to show
+# the mechanism; a real agency's come from its management agreements.
+WO_AUTO_LIMIT_CENTS = 500_00        # at or under: approved within the agreed limit, no second person
+WO_HEAD_LIMIT_CENTS = 2_000_00      # over: only the head of property management may approve
+WO_VARIANCE_PCT = 10                # completed cost more than this over quote needs a reason
+WO_OFFICE = "B"                     # the demo's office
+
+# Who acts in the demo. Roles, not real people.
+WO_PEOPLE = {
+    "Property manager - Avery": "property",
+    "Property manager - Jordan": "property",
+    "Head of property management": "head",
+}

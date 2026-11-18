@@ -1,14 +1,17 @@
 // Drive a reader's path in a real browser: filter a report to one office,
 // follow an office from the scorecard, and ask the assistant a question -
-// which, with no model key, is answered from the catalogue and says so.
+// which, with no model key, is answered from the catalogue and says so -
+// and use the work orders as a visitor: a self-approval and an over-limit
+// approval refused, a second person's approval recorded. TOKEN resets after.
 //
-//   BASE=http://localhost:5271 node evals/flow.mjs
+//   BASE=http://localhost:5271 [TOKEN=<DEMO_WRITE_TOKEN>] node evals/flow.mjs
 
 import { chromium } from "playwright";
 
 const BASE = process.env.BASE || "http://localhost:5271";
 const CHANNEL = process.env.BROWSER_CHANNEL || undefined;
 const OUT = process.env.OUT || "./page-shots";
+const TOKEN = process.env.TOKEN || "";
 const browser = await chromium.launch(CHANNEL ? { channel: CHANNEL } : {});
 const page = await (await browser.newContext({ viewport: { width: 1500, height: 1000 } })).newPage();
 let steps = 0;
@@ -38,9 +41,32 @@ await box.press("Enter");
 await expect("the assistant answers with a table", page.getByText(/over_14_days|Office D/).last());
 await page.screenshot({ path: `${OUT}/flow-assistant.png` });
 
+// The write path, as a visitor with no token.
+const actAs = async (who) => {
+  await page.evaluate((w) => sessionStorage.setItem("place_demo_actor", w), who);
+  await page.goto(`${BASE}/work-orders`, { waitUntil: "networkidle" });
+};
+await actAs("Property manager - Jordan");
+await page.getByLabel("Decision note for WO-0006").fill("Approving my own oven.");
+await page.getByTitle("Approve WO-0006").click();
+await expect("approving your own work order is refused", page.getByText(/You raised this work order, so you cannot decide it/));
+await actAs("Property manager - Avery");
+await page.getByLabel("Decision note for WO-0007").fill("Deck is unsafe; approve.");
+await page.getByTitle("Approve WO-0007").click();
+await expect("a large quote needs the head of property management", page.getByText(/only the head of property management may approve it/));
+await page.getByLabel("Decision note for WO-0006").fill("Like for like; approved.");
+await page.getByTitle("Approve WO-0006").click();
+await expect("someone else approves it", page.getByText("WO-0006 approved."));
+await expect("both refusals are in the audit log", page.getByText("Refused").first());
+await page.screenshot({ path: `${OUT}/flow-work-orders.png` });
+
 await page.goto(`${BASE}/ask`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /DELETE FROM listing/ }).click();
 await expect("the gate refuses a write", page.getByText("Refused"));
 
+if (TOKEN) {
+  const reset = await page.evaluate(async (tok) => (await fetch("/api/reset", { method: "POST", headers: { "X-Write-Token": tok } })).status, TOKEN);
+  if (reset !== 200) throw new Error(`reset returned ${reset}`);
+}
 await browser.close();
 console.log(`\n${steps} steps passed`);

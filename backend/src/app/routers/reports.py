@@ -244,3 +244,65 @@ def reset(request: Request) -> dict:
     with db.writing() as cur:
         audit.record(cur, actor(request), "platform", "demo", "reset to built state")
     return {"reset": True}
+
+
+# ---- Work orders: the governed workflow ----------------------------------------------
+
+from pydantic import BaseModel, Field  # noqa: E402
+
+from src.app.services import work_orders  # noqa: E402
+from src.app.services.auth import require_write  # noqa: E402
+
+
+class NewOrder(BaseModel):
+    tenancy_id: str = Field(max_length=12)
+    category: str = Field(max_length=40)
+    priority: str = Field(max_length=10)
+    description: str = Field(max_length=400)
+    quote_cents: int = Field(gt=0, lt=100_000_000)
+
+
+class Decision(BaseModel):
+    approve: bool
+    note: str = Field(max_length=300)
+
+
+class Completion(BaseModel):
+    cost_cents: int = Field(gt=0, lt=100_000_000)
+    note: str = Field(default="", max_length=300)
+
+
+@router.get("/work-orders")
+def list_work_orders() -> dict:
+    return {
+        "orders": db.rows("SELECT * FROM work_order ORDER BY wo_id DESC"),
+        "audit": db.rows(f"""SELECT ts, actor, project_id, action, outcome, detail FROM audit_log WHERE system = '{work_orders.SYSTEM}'
+                             ORDER BY audit_id DESC LIMIT 80"""),
+        "people": list(ref.WO_PEOPLE),
+        "categories": work_orders.CATEGORIES,
+        "rules": {"auto_limit_cents": ref.WO_AUTO_LIMIT_CENTS, "head_limit_cents": ref.WO_HEAD_LIMIT_CENTS,
+                  "variance_pct": ref.WO_VARIANCE_PCT, "office": ref.WO_OFFICE},
+        "tenancies": db.rows(f"""SELECT tenancy_id, weekly_rent FROM v_tenancies WHERE office_code = '{ref.WO_OFFICE}' AND current
+                                 ORDER BY tenancy_id LIMIT 40"""),
+        "ended_example": db.scalar(f"""SELECT tenancy_id FROM tenancy WHERE office_code = '{ref.WO_OFFICE}' AND end_on IS NOT NULL
+                                       ORDER BY end_on DESC, tenancy_id LIMIT 1"""),
+    }
+
+
+@router.post("/work-orders", dependencies=[Depends(require_write)])
+def raise_work_order(body: NewOrder, request: Request) -> dict:
+    with db.writing() as cur:
+        return work_orders.raise_order(cur, actor(request), body.tenancy_id.strip().upper(), body.category, body.priority,
+                                       body.description, body.quote_cents)
+
+
+@router.post("/work-orders/{wo_id}/decide", dependencies=[Depends(require_write)])
+def decide_work_order(wo_id: str, body: Decision, request: Request) -> dict:
+    with db.writing() as cur:
+        return work_orders.decide(cur, actor(request), wo_id, body.approve, body.note)
+
+
+@router.post("/work-orders/{wo_id}/complete", dependencies=[Depends(require_write)])
+def complete_work_order(wo_id: str, body: Completion, request: Request) -> dict:
+    with db.writing() as cur:
+        return work_orders.complete(cur, actor(request), wo_id, body.cost_cents, body.note)

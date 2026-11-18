@@ -37,10 +37,12 @@ class Settings(BaseSettings):
     orb_max_message_chars: int = 2000
     orb_max_context_chars: int = 8000
 
-    # The operator's token: resets the run log and lifts the rate limits for a
-    # live walkthrough. Nothing else writes; the reports are read-only.
+    # The operator's token: resets the demo and lifts the rate limits for a live
+    # walkthrough. Open demo: any visitor may use the work orders, acting as one
+    # of the demo roles, under a per-address limit; the rules still refuse, and
+    # the working copy returns to the build on every cold start.
     demo_write_token: str = ""
-    public_writes: bool = False
+    public_writes: bool = True
     write_rate_limit_per_ip: int = 120
     write_rate_limit_global: int = 1500
 

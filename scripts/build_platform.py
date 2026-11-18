@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import duckdb
@@ -25,13 +26,64 @@ import duckdb
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "backend"))
 
+from fastapi import HTTPException  # noqa: E402
+
 from src.app.pipeline import acceptance, checks, generate  # noqa: E402
 from src.app.pipeline import reference as ref  # noqa: E402
+from src.app.services import audit, work_orders  # noqa: E402
 from src.settings import settings  # noqa: E402
 
 MANIFEST = REPO_ROOT / "infra-azure" / "build.sha256"
 SCHEMA = REPO_ROOT / "backend" / "src" / "app" / "pipeline" / "schema.sql"
 UNPINNED = {"kv"}
+
+AV, JO, HEAD = "Property manager - Avery", "Property manager - Jordan", "Head of property management"
+# The fortnight before today, through the same rules as a click. (days before today, actor, action, args)
+# Tenancies are picked by position among the office's current ones: t0, t1, ...; "ended" is one that has ended.
+HISTORY = [
+    (13, AV, "raise", ("t0", "Plumbing", "routine", "Leaking kitchen mixer tap; plumber to replace the cartridge.", 320_00)),
+    (12, AV, "complete", ("WO-0001", 320_00, "")),
+    (12, AV, "raise", ("t1", "Electrical", "urgent", "No power to the kitchen circuit; electrician today.", 780_00)),
+    (12, AV, "decide", ("WO-0002", True, "Urgent, I'll approve it.")),
+    (12, JO, "decide", ("WO-0002", True, "Safety: no power to the kitchen. Approved.")),
+    (10, AV, "complete", ("WO-0002", 850_00, "")),
+    (9, JO, "raise", ("t2", "Roof and gutters", "routine", "Replace rusted gutter along the rear of the house; two quotes obtained.", 3_450_00)),
+    (9, AV, "decide", ("WO-0003", True, "Looks reasonable to me.")),
+    (8, HEAD, "decide", ("WO-0003", True, "Lower of two quotes; owner agreed by email.")),
+    (7, AV, "raise", ("t3", "Garden", "routine", "Front garden overgrown; tidy before the routine inspection.", 1_200_00)),
+    (6, HEAD, "decide", ("WO-0004", False, "The lease makes the garden the tenant's job; raise it with them at inspection.")),
+    (5, JO, "raise", ("t4", "Locks and keys", "urgent", "Tenant locked out; locksmith attended after hours.", 260_00)),
+    (5, JO, "complete", ("WO-0005", 410_00, "")),
+    (5, JO, "complete", ("WO-0005", 410_00, "After-hours call-out fee on top of the quoted lock change.")),
+    (4, AV, "raise", ("ended", "Appliance", "routine", "Dishwasher not draining.", 450_00)),
+    (3, JO, "raise", ("t5", "Appliance", "routine", "Oven element failed; replace like for like.", 640_00)),
+    (2, AV, "raise", ("t6", "General repairs", "routine", "Rotten deck boards at the back stairs; carpenter to replace.", 2_600_00)),
+]
+
+
+def work_order_history(con: duckdb.DuckDBPyConnection) -> tuple[int, int]:
+    from datetime import timedelta
+    current = [r[0] for r in con.execute(
+        f"SELECT tenancy_id FROM tenancy WHERE office_code = '{ref.WO_OFFICE}' AND end_on IS NULL ORDER BY tenancy_id").fetchall()]
+    ended = con.execute(f"SELECT tenancy_id FROM tenancy WHERE office_code = '{ref.WO_OFFICE}' AND end_on < DATE '{ref.TODAY}' - INTERVAL 30 DAY ORDER BY end_on DESC, tenancy_id LIMIT 1").fetchone()[0]
+    done = refused = 0
+    for days, actor, action, args in HISTORY:
+        audit.CLOCK = datetime.combine(ref.TODAY, datetime.min.time()) + timedelta(hours=9) - timedelta(days=days)
+        try:
+            if action == "raise":
+                slot, *rest = args
+                tid = ended if slot == "ended" else current[int(slot[1:])]
+                work_orders.raise_order(con, actor, tid, *rest, at=audit.CLOCK)
+            elif action == "decide":
+                work_orders.decide(con, actor, *args, at=audit.CLOCK)
+            else:
+                work_orders.complete(con, actor, *args, at=audit.CLOCK)
+            done += 1
+        except HTTPException:
+            refused += 1
+    audit.CLOCK = None
+    return done, refused
+
 
 def table_digests(con: duckdb.DuckDBPyConnection) -> list[str]:
     lines = []
@@ -72,6 +124,8 @@ def main() -> int:
 
     print("3/5 reporting views")
     con.execute((PIPE / "views.sql").read_text(encoding="utf-8"))
+
+    print("    work orders: %d steps recorded, %d refused by the rules (and audit-logged)" % work_order_history(con))
 
     print("4/5 acceptance checks")
     failed = [(name, detail) for name, ok, detail in acceptance.run(con) if not ok]

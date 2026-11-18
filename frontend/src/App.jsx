@@ -127,7 +127,7 @@ function Header({ narrow, onMenu, menuOpen }) {
         <div style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 11.5, color: t.headerMuted, flexWrap: "wrap" }}>
           <Pill tone="neutral">Synthetic data</Pill>
           <Pill tone="neutral">Today {meta.today.split("-").reverse().join("/")}</Pill>
-          {operator ? <Pill tone="good">Operator</Pill> : null}
+          <Pill tone={operator ? "good" : "neutral"}>{operator ? "Operator" : "Open demo: work orders reset when idle"}</Pill>
           <Pill tone={meta.llm_configured ? "ai" : "neutral"}>{meta.llm_configured ? `Assistant: ${meta.llm_model}` : "No model key: catalogue answers only"}</Pill>
         </div>
       )}

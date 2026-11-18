@@ -16,7 +16,7 @@ const OUT = process.env.OUT || "./page-shots";
 const CHANNEL = process.env.BROWSER_CHANNEL || undefined;
 mkdirSync(OUT, { recursive: true });
 
-const PAGES = ["overview", "sales", "sales?office=K", "rentals", "rentals?office=B", "offices", "marketing", "data-checks", "ask",
+const PAGES = ["overview", "sales", "sales?office=K", "rentals", "rentals?office=B", "work-orders", "offices", "marketing", "data-checks", "ask",
   "how-it-is-run", "first-90-days"];
 
 const FORBIDDEN = ["NaN", "undefined", "[object Object]", "Infinity", "$-", "Invalid Date", "null"];

@@ -34,3 +34,9 @@ CREATE TABLE quarantine (record_kind VARCHAR, record_id VARCHAR, check_id VARCHA
 CREATE TABLE agent_run (ts TIMESTAMP, page VARCHAR, agents VARCHAR, engine VARCHAR, ok BOOLEAN, errors INTEGER, duration_ms INTEGER);
 CREATE TABLE audit_log (audit_id INTEGER, ts TIMESTAMP, actor VARCHAR, system VARCHAR, project_id VARCHAR, subject VARCHAR,
                         action VARCHAR, outcome VARCHAR, detail VARCHAR, reason VARCHAR);
+
+-- Maintenance work orders: raised, decided by someone else, completed. Written by the governed workflow.
+CREATE TABLE work_order (wo_id VARCHAR PRIMARY KEY, tenancy_id VARCHAR, office_code VARCHAR, category VARCHAR, priority VARCHAR,
+                         description VARCHAR, quote_cents BIGINT, raised_by VARCHAR, raised_at TIMESTAMP, status VARCHAR,
+                         decided_by VARCHAR, decided_at TIMESTAMP, decision_note VARCHAR,
+                         completed_cost_cents BIGINT, completed_at TIMESTAMP, completion_note VARCHAR);
