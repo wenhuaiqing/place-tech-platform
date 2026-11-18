@@ -41,6 +41,11 @@ def _connect() -> duckdb.DuckDBPyConnection:
             raise RuntimeError("No database. Run scripts/build_platform.py first.")
         copy_build()
     con = duckdb.connect(str(path))
+    # The replica is the smallest Container Apps size (0.25 vCPU, 0.5 GiB
+    # shared with uvicorn). Bound DuckDB to it, so a heavy query written by the
+    # model fails cleanly rather than taking the container down.
+    con.execute(f"SET memory_limit = '{settings.duckdb_memory_limit}'")
+    con.execute(f"SET threads = {settings.duckdb_threads}")
     con.execute("SET enable_external_access = false")
     return con
 

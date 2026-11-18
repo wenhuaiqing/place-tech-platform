@@ -88,9 +88,12 @@ resource "azurerm_container_app" "app" {
     container {
       name  = "backend"
       image = "${var.image_repo}/backend:${var.image_tag}"
-      # The data is small; the build ran in the image, so this only serves it.
-      cpu    = 0.5
-      memory = "1Gi"
+      # The smallest size: the data is small and built into the image, the
+      # backend peaks near 260 MB, and DuckDB is capped at 200 MB and one
+      # thread. With nginx at its minimum, the replica is 0.5 vCPU / 1 GiB in
+      # all - a third less than before, and what is billed in warm hours.
+      cpu    = 0.25
+      memory = "0.5Gi"
 
       readiness_probe {
         transport               = "HTTP"

@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     data_dir: Path = REPO_ROOT / "data"
     build_db_path: Path = REPO_ROOT / "data" / "platform.build.duckdb"
     duckdb_path: Path = REPO_ROOT / "data" / "platform.duckdb"
+    duckdb_memory_limit: str = "200MB"
+    duckdb_threads: int = 1
 
     # ---- Abuse controls (anonymous endpoints) -------------------------------
     orb_rate_limit_per_ip: int = 20
