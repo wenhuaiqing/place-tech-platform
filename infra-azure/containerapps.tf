@@ -23,7 +23,9 @@ resource "azurerm_container_app" "app" {
   revision_mode                = "Single"
 
   lifecycle {
-    ignore_changes = [workload_profile_name]
+    # min_replicas is switched by the business-hours schedule (schedule.tf);
+    # a deploy during the day must not switch it back.
+    ignore_changes = [workload_profile_name, template[0].min_replicas]
   }
 
   ingress {
@@ -52,22 +54,11 @@ resource "azurerm_container_app" "app" {
     # limits - lives in that replica's working copy of the database.
     max_replicas = 1
 
-    # Warm in business hours, so a reviewer opening the link never waits on a
-    # cold start; at zero outside them. Defining any rule replaces the default
-    # HTTP rule, so it is declared too: a visit at night still wakes the app.
-    dynamic "custom_scale_rule" {
-      for_each = var.business_hours.enabled ? [1] : []
-      content {
-        name             = "business-hours"
-        custom_rule_type = "cron"
-        metadata = {
-          timezone        = var.business_hours.timezone
-          start           = var.business_hours.start
-          end             = var.business_hours.end
-          desiredReplicas = "1"
-        }
-      }
-    }
+    # Warm in business hours through min_replicas, switched by two Logic Apps
+    # (schedule.tf): a replica held by the minimum is billed at the idle rate
+    # while nobody is using it, where one started by a scale rule would be
+    # billed at the active rate. At zero outside them; a visit at night still
+    # wakes the app through the HTTP rule.
     http_scale_rule {
       name                = "http"
       concurrent_requests = "10"
